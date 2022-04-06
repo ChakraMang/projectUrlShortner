@@ -18,6 +18,6 @@ const URLSchema = new mongoose.Schema({
         trim : true,
         unique:true
     }
-})
+},{versionKey : false})
 
 module.exports = mongoose.model('Url',URLSchema)
