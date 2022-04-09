@@ -32,8 +32,7 @@ const createUrl = async function(req,res) {
     try{
         if(Object.keys(req.body).length == 0) return res.status(400).send({status:false,msg:'enter the long url in the body'})
 
-        
-        const baseUrl = 'localhost:3000'
+        const baseUrl = 'http://localhost:3000'
         const urlCode = shortid.generate().toLowerCase()
         
         const longUrl = req.body.longUrl;
@@ -45,7 +44,8 @@ const createUrl = async function(req,res) {
             doc = JSON.parse(doc)
             return res.status(200).send(doc)
         } else {
-            let url = await urlModel.findOne({ longUrl });
+            let url = await urlModel.findOne({ longUrl })
+
             if (url) {  
                 await SET_ASYNC(`${longUrl}`, JSON.stringify(url))
                 return res.send({ status: true, data: url });
@@ -64,30 +64,30 @@ const createUrl = async function(req,res) {
 
         let newDoc = await urlModel.create(data)
         let urlDoc = { urlCode : newDoc.urlCode,longUrl:newDoc.longUrl,shortUrl:newDoc.shortUrl}
+        await SET_ASYNC(`${longUrl}`, JSON.stringify(newDoc))
         return res.status(201).send({status:true,msg:urlDoc})
     }
     catch(error){
-        return res.status(500).send({status:false,msg:error.message})
+        return res.status(500).send({status:false,message:error.message})
     }
     
 }
 
-
+// localhost:3000/123212
 const redirect = async function(req,res){
     try{
         let urlCode = req.params.urlCode
         if(!shortid.isValid(urlCode)) return res.status(400).send({status:false,msg:'urlCode is not valid'})
 
         let url = await GET_ASYNC(`${urlCode}`)
-        url = JSON.parse(url)
+       
         if(url){
-            console.log(url)
+            url = JSON.parse(url)
             return res.redirect(url.longUrl)
             
         } else{
-            let url = await urlModel.findOne({urlCode : req.params.urlCode})
-
-            if(!url) return res.status(400).send({status:false,message:"urlcode is not present in the db"})
+            let url = await urlModel.findOne({urlCode : urlCode})
+            if(!url) return res.status(404).send({status:false,msg:"No url is assigned to  this long url"})
             await SET_ASYNC(`${urlCode}`, JSON.stringify(url))
             return res.redirect(url.longUrl)
         }
